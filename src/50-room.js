@@ -33,7 +33,7 @@ function buildRoom(ox,oz,mirror){
 
   /* ---- 窓（南） ---- */
   const win=new THREE.Mesh(new THREE.PlaneGeometry(2.5,1.25),
-    plain(0x0c1220,{rough:.08,metal:.5}));
+    plain(0x0c1220,{rough:.28,metal:.32}));
   win.position.set(X(0),1.35,Z(-2.59));g.add(win);
   const sash=plain(0x8d8a82,{rough:.7});
   put({w:2.7,h:.06,d:.06,x:0,y:.68,z:-2.58,mat:sash,tile:1});
@@ -104,7 +104,7 @@ function buildRoom(ox,oz,mirror){
   const bodyM =plain(0xbfbcb4,{rough:.40,metal:.28});
   const linerM=plain(0xdedbd2,{rough:.62,side:THREE.BackSide});
   const shelfM=plain(0xd6d8d4,{rough:.30,metal:.05,op:.86});
-  const hwM   =plain(0x8f8b82,{rough:.35,metal:.7});
+  const hwM   =plain(0x8f8b82,{rough:.42,metal:.55});
   // 外板（前面だけ開けておく）
   put({w:.05,h:1.45,d:.62,x:frx-.285,y:.06,z:frz     ,mat:bodyM,tile:1,to:fr});   // 背
   put({w:.62,h:1.45,d:.05,x:frx     ,y:.06,z:frz-.285,mat:bodyM,tile:1,to:fr});   // 側

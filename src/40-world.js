@@ -390,7 +390,7 @@ function buildVending(){
     // ガラスの映り込み
     const gls=new THREE.Mesh(new THREE.PlaneGeometry(wz*2,wy1-wy0),
       new THREE.MeshStandardMaterial({color:0xaecbe0,transparent:true,opacity:.07,
-        roughness:.16,metalness:.4,depthWrite:false}));
+        roughness:.34,metalness:.24,depthWrite:false}));
     gls.position.set(W/2+.032,(wy0+wy1)/2,0);gls.rotation.y=Math.PI/2;m.add(gls);
 
     // ── 選択ボタン列（見本の真下） ──
@@ -549,7 +549,7 @@ function buildStore(){
   box({w:.3,h:4.2,d:11.4,x:cx-7.15,y:0,z:cz,mat:ext,tile:2,solid:true,to:g});  // 西
   box({w:.3,h:4.2,d:11.4,x:cx+7.15,y:0,z:cz,mat:ext,tile:2,solid:true,to:g});  // 東
   // 正面ガラス（入口 x:cx±2.2 は開けておく）
-  const glassM=plain(0x2a3840,{rough:.1,metal:.4,op:.26});
+  const glassM=plain(0x2a3840,{rough:.28,metal:.24,op:.26});
   box({w:4.6,h:3.2,d:.12,x:cx-4.5,y:.05,z:cz-5.5,mat:glassM,tile:2,solid:true,to:g});
   box({w:4.6,h:3.2,d:.12,x:cx+4.5,y:.05,z:cz-5.5,mat:glassM,tile:2,solid:true,to:g});
   box({w:14.6,h:1.0,d:.4,x:cx,y:3.2,z:cz-5.5,mat:ext,tile:2,to:g});
