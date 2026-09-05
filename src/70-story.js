@@ -521,7 +521,7 @@ function updateEvents(dt){
   const V=EV.vend;
   if(STORY.phase==="back"&&G.vend.lit){
     const d=dist2D(G.vend.knockPos);
-    if(!V.armed&&d<26&&EV.park.state>=2){
+    if(!V.armed&&d<26){
       V.armed=true;V.t=2.0;V.stage=1;
     }
     if(V.armed&&V.stage<4){
