@@ -2882,10 +2882,19 @@ addEventListener("keydown",e=>{
 addEventListener("keyup",e=>{KEY[e.code]=false;});
 addEventListener("blur",()=>{for(const k in KEY)KEY[k]=false;});
 
+/* ポインタロックは使えない環境がある（埋め込みフレーム、data: URL など）。
+   新しめの Chrome は Promise を返すので、拒否されても握りつぶす。 */
+function lockPointer(){
+  if(MOBILE||!canvas.requestPointerLock)return;
+  try{
+    const p=canvas.requestPointerLock();
+    if(p&&p.catch)p.catch(()=>{});
+  }catch(e){}
+}
 canvas.addEventListener("click",()=>{
   if(MOBILE)return;                    // スマホはポインタロックを使わない
   if(!STORY.started||paused||STORY.ended)return;
-  if(!locked&&canvas.requestPointerLock)canvas.requestPointerLock();
+  if(!locked)lockPointer();
 });
 document.addEventListener("pointerlockchange",()=>{
   locked=(document.pointerLockElement===canvas);
@@ -3116,7 +3125,7 @@ function togglePause(on){
     el.classList.add("hide");
     setTimeout(()=>el.classList.add("gone"),400);
     SND.duck(1,.35);
-    if(canvas.requestPointerLock)canvas.requestPointerLock();
+    lockPointer();
   }
 }
 $("resumeBtn").onclick=()=>togglePause(false);
