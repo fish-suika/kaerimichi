@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>帰り道</title>
+<style>
+  :root{
+    --ink:#e8e6e1;
+    --dim:#8e8b85;
+    /* 唯一の色みは、街灯のナトリウム灯の色 */
+    --lamp:#ffd39a;
+    --jp:"Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","Meiryo","Noto Sans JP",sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--ink);font-family:var(--jp)}
+  canvas{display:block;width:100%;height:100%}
+  #wrap{position:fixed;inset:0}
+
+  /* ---- film grain + vignette ---- */
+  #vig{position:fixed;inset:0;pointer-events:none;z-index:5;
+    background:radial-gradient(ellipse 78% 68% at 50% 50%,rgba(0,0,0,0) 35%,rgba(0,0,0,.55) 78%,rgba(0,0,0,.88) 100%);}
+  #grain{position:fixed;inset:-100px;pointer-events:none;z-index:6;opacity:.055;background-repeat:repeat;will-change:transform}
+
+  /* ---- fade ---- */
+  #fade{position:fixed;inset:0;background:#000;z-index:20;pointer-events:none;opacity:1;transition:opacity 1s linear}
+
+  /* ---- HUD ---- */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:8}
+  /* 目的表示。どんな明るさの背景でも読めるよう、暗い下地と灯り色の縦線を付ける */
+  #obj{position:absolute;left:30px;top:26px;font-size:18px;letter-spacing:.14em;
+    color:#f2efe8;background:rgba(6,7,10,.62);border-left:3px solid var(--lamp);
+    padding:11px 20px 12px 15px;border-radius:0 3px 3px 0;
+    text-shadow:0 1px 10px #000;opacity:0;transition:opacity .8s}
+  #obj.on{opacity:1}
+  #obj b{display:block;font-size:12px;letter-spacing:.3em;color:var(--lamp);
+    font-weight:400;margin-bottom:6px;opacity:.9}
+  #cross{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;
+    background:rgba(255,255,255,.32);transition:all .16s ease-out}
+  #cross.hot{width:11px;height:11px;margin:-5.5px 0 0 -5.5px;background:transparent;border:1px solid rgba(255,255,255,.8)}
+  #prompt{position:absolute;left:50%;top:calc(50% + 42px);transform:translateX(-50%);font-size:19px;letter-spacing:.14em;
+    opacity:0;transition:opacity .18s;text-shadow:0 1px 8px #000;white-space:nowrap}
+  #prompt.on{opacity:.92}
+  #prompt kbd{display:inline-block;border:1px solid rgba(255,255,255,.55);border-radius:3px;padding:1px 6px;
+    margin-right:10px;font-family:var(--jp);font-size:15px}
+  #sub{position:absolute;left:50%;bottom:12%;transform:translateX(-50%);max-width:82%;text-align:center;
+    font-size:23px;line-height:1.85;letter-spacing:.1em;text-shadow:0 2px 12px #000,0 0 24px #000;opacity:0;
+    transition:opacity 1s;white-space:pre-line}
+  #sub.on{opacity:1}
+
+  /* ---- screens ---- */
+  .screen{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:#000;text-align:center;gap:0;transition:opacity .9s}
+  .screen.hide{opacity:0;pointer-events:none}
+  .screen.gone{display:none}
+  /* タイトルの奥に、遠くの街灯くらいの灯りをひとつ置く */
+  #title::before{content:"";position:absolute;left:50%;top:38%;width:min(70vw,620px);height:min(70vw,620px);
+    transform:translate(-50%,-50%);pointer-events:none;
+    background:radial-gradient(circle,rgba(255,211,154,.13) 0%,rgba(255,211,154,.045) 32%,rgba(255,211,154,0) 68%)}
+  #title>*{position:relative}
+  #title h1{font-size:min(13vw,86px);letter-spacing:.42em;font-weight:400;text-indent:.42em;
+    text-shadow:0 0 46px rgba(255,211,154,.20),0 0 90px rgba(255,211,154,.10)}
+  #title .sub{margin-top:18px;font-size:13px;letter-spacing:.55em;color:#565350;text-indent:.55em}
+  #title .keys{margin-top:64px;font-size:15px;line-height:2.3;color:#6d6a65;letter-spacing:.1em}
+  #title .keys span{color:#b9b6b0}
+  .btn{margin-top:52px;pointer-events:auto;cursor:pointer;background:none;color:var(--ink);
+    border:1px solid rgba(255,255,255,.28);padding:14px 46px;font-family:var(--jp);font-size:17px;
+    letter-spacing:.4em;text-indent:.4em;transition:.35s}
+  .btn:hover,.btn:focus-visible{background:rgba(255,211,154,.06);border-color:rgba(255,211,154,.65);
+    color:var(--lamp);letter-spacing:.55em;outline:none}
+  .btn[disabled]{opacity:.3;cursor:default}
+  #warn{margin-top:34px;font-size:13px;color:#4e4b47;letter-spacing:.2em;line-height:2}
+
+  /* ---- pause ---- */
+  #pause{background:rgba(0,0,0,.9)}
+  #pause h2{font-size:24px;letter-spacing:.5em;text-indent:.5em;color:#cfccc6;font-weight:400;margin-bottom:40px}
+  .row{pointer-events:auto;display:flex;align-items:center;gap:16px;margin:11px 0;font-size:15px;
+    letter-spacing:.16em;color:#8e8b85}
+  .row label{width:120px;text-align:right}
+  .row input[type=range]{width:190px;accent-color:#b6b2ab}
+  .row output{width:44px;text-align:left;color:#cfccc6}
+
+  /* ---- end ---- */
+  #end h1{font-size:min(9vw,54px);letter-spacing:.6em;text-indent:.6em;font-weight:400;opacity:.92}
+  #end .cap{margin-top:26px;font-size:15px;letter-spacing:.34em;color:#4f4c48}
+
+  #hint{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:9;font-size:14px;
+    letter-spacing:.2em;color:#55524e;opacity:0;transition:opacity .7s;pointer-events:none}
+  #hint.on{opacity:1}
+
+  /* ---- タッチ操作（スマホ・タブレット） ---- */
+  html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;
+    -webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+  #wrap,canvas{touch-action:none}
+  body:not(.touch) .touchonly{display:none}
+  body.touch .kbdonly{display:none}
+  body.touch #prompt kbd{display:none}
+  /* 左半分の仮想スティック。指を置いた場所に出る */
+  #stick{position:fixed;z-index:9;width:130px;height:130px;margin:-65px 0 0 -65px;border-radius:50%;
+    border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.03);
+    pointer-events:none;opacity:0;transition:opacity .2s}
+  #stick.on{opacity:1}
+  #knob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3)}
+  #act,#menu{position:fixed;z-index:10;pointer-events:auto;cursor:pointer;
+    font-family:var(--jp);color:var(--ink);background:rgba(8,9,12,.5);
+    border:1px solid rgba(255,255,255,.45);text-shadow:0 1px 8px #000;display:none}
+  #act{right:24px;bottom:calc(28px + env(safe-area-inset-bottom));width:94px;height:94px;border-radius:50%;
+    font-size:15px;letter-spacing:.1em;line-height:1.4;padding:0 6px;align-items:center;justify-content:center}
+  #act.on{display:flex}
+  #act:active{background:rgba(255,211,154,.18);border-color:var(--lamp);color:var(--lamp)}
+  #menu{right:16px;top:calc(14px + env(safe-area-inset-top));width:44px;height:44px;border-radius:4px;
+    border-color:rgba(255,255,255,.22);font-size:17px}
+  body.touch #menu{display:block}
+  body.paused #menu,body.paused #act{display:none}   /* 中断画面に透けて見えないように */
+  /* 狭い画面ではHUDを詰める */
+  @media (max-width:820px){
+    #obj{left:14px;top:14px;font-size:15px;padding:9px 14px 10px 11px}
+    #obj b{font-size:10px;letter-spacing:.24em}
+    #sub{font-size:18px;line-height:1.7;bottom:16%;max-width:88%}
+    #prompt{font-size:16px;top:calc(50% + 34px)}
+    #hint{font-size:12px;bottom:18px}
+    #title h1{font-size:min(17vw,86px)}
+    #title .keys{margin-top:38px;font-size:13px;line-height:2.1}
+    .btn{margin-top:36px;padding:13px 34px;font-size:16px;letter-spacing:.3em;text-indent:.3em}
+    #warn{margin-top:24px;font-size:12px;line-height:1.9}
+    #pause h2{margin-bottom:26px}
+    .row{font-size:13px;gap:10px;margin:9px 0}
+    .row label{width:82px}
+    .row input[type=range]{width:132px}
+  }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<div id="vig"></div>
+<div id="grain"></div>
+
+<div id="hud">
+  <div id="obj"><b>もくてき</b><i id="objt" style="font-style:normal"></i></div>
+  <div id="cross"></div>
+  <div id="prompt"><kbd>E</kbd><span id="promptt">調べる</span></div>
+  <div id="sub"></div>
+</div>
+<div id="hint"></div>
+<!-- タッチ操作のUI。#hud は pointer-events:none なので外に出す -->
+<div id="stick"><div id="knob"></div></div>
+<button id="act">調べる</button>
+<button id="menu" aria-label="中断">☰</button>
+<div id="fade"></div>
+
+<div class="screen" id="title">
+  <h1>帰り道</h1>
+  <div class="sub">A SHORT WALK HOME</div>
+  <div class="keys kbdonly">
+    <span>W A S D</span> ／ 移動　　<span>マウス</span> ／ 視点<br>
+    <span>Shift</span> ／ 急ぐ　　<span>E</span> ／ 調べる　　<span>Esc</span> ／ 中断
+  </div>
+  <div class="keys touchonly">
+    <span>左半分</span> ／ 移動（深く倒すと急ぐ）<br>
+    <span>右半分をなぞる</span> ／ 視点　　<span>調べる</span> ／ 調べる<br>
+    <span>☰</span> ／ 中断
+  </div>
+  <button class="btn" id="startBtn" disabled>準備中…</button>
+  <div id="warn">ヘッドホン と 暗い部屋 を推奨します<br>大きな音が鳴る場面があります</div>
+</div>
+
+<div class="screen gone" id="pause">
+  <h2>中断中</h2>
+  <div class="row"><label>音量</label><input type="range" id="sVol" min="0" max="100" value="80"><output id="oVol">80</output></div>
+  <div class="row"><label>虫の声</label><input type="range" id="sBug" min="0" max="100" value="35"><output id="oBug">35</output></div>
+  <div class="row"><label>明るさ</label><input type="range" id="sGam" min="50" max="180" value="100"><output id="oGam">100</output></div>
+  <div class="row"><label>視点感度</label><input type="range" id="sSens" min="20" max="300" value="100"><output id="oSens">100</output></div>
+  <button class="btn" id="resumeBtn">つづける</button>
+</div>
+
+<div class="screen gone" id="end">
+  <h1 id="endt">帰り道</h1>
+  <div class="cap">おわり</div>
+  <button class="btn" id="againBtn">もういちど歩く</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
