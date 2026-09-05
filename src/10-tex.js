@@ -202,14 +202,19 @@ const TEX={};
       x.beginPath();x.moveTo(0,i);x.lineTo(w,i);x.stroke();}
   });
 
-  /* --- 光のグロー（ビルボード） --- */
+  /* --- 光のグロー（ビルボード） ----
+     加算合成なので、減衰はアルファではなくRGB自体を黒へ落として作る（アルファは常に1）。
+     アルファで薄くすると、周辺のほぼ透明な画素でアルファがほぼ0になり、
+     canvasのアルファ乗算済みデータをテクスチャへ戻す際にiOS(WebKit)で
+     ほぼ0除算に近い計算が起きて、色が化けた画素が固定で焼き付くことがある。 */
   TEX.glow=(function(){
     const c=cv(128,128),x=c.getContext("2d");
+    x.fillStyle="#000";x.fillRect(0,0,128,128);
     const g=x.createRadialGradient(64,64,0,64,64,64);
     g.addColorStop(0,"rgba(255,255,255,1)");
-    g.addColorStop(.16,"rgba(255,255,255,.70)");
-    g.addColorStop(.42,"rgba(255,255,255,.20)");
-    g.addColorStop(1,"rgba(255,255,255,0)");
+    g.addColorStop(.16,"rgba(179,179,179,1)");
+    g.addColorStop(.42,"rgba(51,51,51,1)");
+    g.addColorStop(1,"rgba(0,0,0,1)");
     x.fillStyle=g;x.fillRect(0,0,128,128);
     const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;
   })();
